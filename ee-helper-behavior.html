@@ -1,0 +1,414 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../import-momentjs/import-momentjs.html">
+
+<script type="text/javascript">
+
+  /**
+   * @polymerBehavior Elfy.EEHelperBehavior
+   */
+  Elfy.EEHelperBehaviorImpl = {
+    properties: {
+      /* for passing true parameter to function, called from html */
+      trueValue: {
+        type: Boolean,
+        value: true,
+        readOnly: true
+      },
+
+      /* for passing false parameter to function, called from html */
+      falseValue: {
+        type: Boolean,
+        value: false,
+        readOnly: true
+      },
+    },
+
+    ready: function() {
+      this._initMomentExtensions()
+    },
+
+    _initMomentExtensions: function() {
+      if (!moment) {
+        return;
+      }
+
+      moment.roundMoment = function (m, unit, offset, midpoint, clone) {
+        unit = moment.normalizeUnits(unit);
+
+        if (unit.toLowerCase() == 'day')
+            unit = 'date';
+
+        offset = offset || 1;
+        var value = m.get(unit);
+
+        switch (midpoint) {
+            case 'up':
+                value = Math.ceil(value / offset);
+                break;
+            case 'down':
+                value = Math.floor(value / offset);
+                break;
+            case 'nearest':
+            default:
+                value = Math.round(value / offset);
+                break;
+        }
+        var ret = clone ? m.clone() : m;
+        ret = ret.set(unit, value * offset);
+
+        switch (unit) {
+            case 'year':
+                ret.month(0);
+                /* falls through */
+            case 'month':
+                ret.date(1);
+                /* falls through */
+            case 'date':
+                ret.hours(0);
+                /* falls through */
+            case 'hour':
+                ret.minutes(0);
+                /* falls through */
+            case 'minute':
+                ret.seconds(0);
+                /* falls through */
+            case 'second':
+                ret.milliseconds(0);
+                /* falls through */
+        }
+        return ret;
+      }
+
+      moment.fn.roundTo = function (unit, offset, midpoint) {
+        return moment.roundMoment(this, unit, offset, midpoint, false);
+      };
+    },
+
+    _execute: function(e) {
+      var args = e.currentTarget.getAttribute('data-args');
+
+      if (!args || args.split(',').length < 2) {
+        console.log('_execute needs 2 arguments: action, selector', e.currentTarget);
+      } else {
+        args = args.split(',');
+        var action = args[0];
+        var selector = args[1];
+        var element = Polymer.dom(this.root).querySelector(selector);
+
+        if (action && selector && element) {
+          var fn = new Function('element', 'action', 'return ' + 'element' + '.' + action + '()');
+          fn(element, action)
+        }
+      }
+    },
+
+    _preventBubbleEvent: function(event) {
+      event.cancelBubble = true;
+      event.stopPropagation();
+    },
+
+    _length: function(prop) {
+      return prop.length
+    },
+
+    _lengthBigger: function(prop,val) {
+      return prop.length > 0
+    },
+
+    _eql: function(prop1, prop2) {
+      return prop1 === prop2
+    },
+
+    _bigger: function(prop1, prop2) {
+      return prop1 > prop2
+    },
+
+    _smaller: function(prop1, prop2) {
+      return prop1 < prop2
+    },
+
+    _or: function() {
+      var r = false
+      Array.from(arguments).forEach((e) => {
+        if(e) r = true
+      })
+      return r
+    },
+
+    _and: function() {
+      debugger
+      return Array.from(arguments).filter(e => e).length === Array.from(arguments).length
+    },
+
+    _ifThenElse(val, trueVal, falseVal) {
+      return val ? trueVal : falseVal
+    },
+
+    _neql: function(prop1, prop2) {
+      return !this._eql(prop1, prop2)
+    },
+
+    _alias(target, defaultVal) {
+      if (defaultVal === undefined || defaultVal === '{}') defaultVal = {}
+      else if (defaultVal === '[]') defaultVal = []
+
+      if (target !== undefined && target !== null) {
+        return target
+      }
+      return defaultVal
+    },
+
+    _subAlias(target, path, defaultVal) {
+      if (defaultVal === undefined || defaultVal === '{}') defaultVal = {}
+      else if (defaultVal === '[]') defaultVal = []
+
+      if (target[path] !== undefined && target[path] !== null) {
+        return target[path]
+      }
+      return defaultVal
+    },
+
+    // Math
+    _sum() {
+      var sum = 0
+      Array.from(arguments).forEach( e => sum += e )
+      return sum
+    },
+
+    // String
+    _lower(str) {
+      if(!str) return ''
+      return str.toLowerCase();
+    },
+
+    _uncamelize: function(str) {
+      if(!str) return ''
+      return str.replace(/([A-Z])/g, ' $1').replace(/^./, function(str){ return str.toUpperCase(); })
+    },
+
+    _capitalizeFirstLetter(str) {
+      if(!str) return ''
+      return str.charAt(0).toUpperCase() + str.slice(1)
+    },
+
+    _trim: function(str, start, length, suffix) {
+      if(!str) return ''
+      var len = length ? length : str.length;
+      var st = start ? start : 0;
+      str = str.substring(st, len);
+      return str += suffix ? suffix : ''
+    },
+
+    _split(delimiter, str, idx) {
+      if (!str || !delimiter) return ''
+      let r = str.split(delimiter)
+      if (typeof idx !== 'undefined') {
+        try {
+          r = r[idx]
+        }
+        catch(err) {
+          r = ''
+        }
+      }
+      return r
+    },
+
+    // _concat(delimiter, str1, str2, ...)
+    _concat: function() {
+      var str = ''
+      Array.from(arguments).forEach((e, i, a) => {
+        if (i!==0) {
+          str += e + (i < a.length-1 ? a[0] : '')
+        }
+      })
+      return str;
+    },
+    // String END
+
+    // Arrays
+    _sort(array, key) {
+      if (!array || !key) return array
+      return array.sort(function(a, b){
+        return a[key].localeCompare(b[key])
+      });
+    },
+
+    _subGroupBy(array, n=3) {
+      const group = []
+      const len = array ? Math.ceil(array.length / n) : 0
+      for (let i=0; i < len; i++) {
+        const subgroup = []
+        for (let j=0; j<n; j++) {
+          const item = array[i*n+j]
+          if (item === undefined) {
+            break
+          }
+          subgroup.push(item)
+        }
+        group.push(subgroup)
+      }
+      return group
+    },
+
+    // Arrays END
+
+    // Objects
+    _arrayFromObject: function(obj) {
+      let arr = [];
+      if (typeof obj === 'object') {
+        arr = Object.keys(obj).map((k) => [k, obj[k]]);
+      }
+      return arr;
+    },
+    // Objects END
+
+    // CSS
+    _ifThisThenElse: function(property, condition, trueClass, falseClass) {
+      return this._classBindingEql(property, condition, trueClass, falseClass)
+    },
+
+    _classBindingEql: function(property, condition, trueClass, falseClass) {
+      if (condition === property) {
+        return trueClass
+      } else {
+        return falseClass || ""
+      }
+    },
+    // CSS END
+
+    // Address
+    _formatAddress: function(address, short, standard) {
+      if (!address || !address.id) {
+        return standard || ''
+      }
+
+      if (short) {
+        return this._concat(', ',address.address1, address.address2)
+      } else {
+        return this._concat(', ',address.address1, address.address2, address.postalCode, address.city)
+      }
+
+    },
+
+    // Address END
+
+    // Date & Time
+    _parseMoment: function(aDateTime, format) {
+
+      var m = format ? moment.utc(aDateTime, format) : moment.utc(aDateTime)
+      if (!m.isValid() || typeof aDateTime === 'undefined') {
+        return false
+      }
+
+      return m
+    },
+
+    _formatDuration: function(aDuration) {
+      if (!aDuration) return ''
+      return moment.duration(aDuration).humanize()
+    },
+
+    _formatDateTime: function(aDateTime) {
+      var m = this._parseMoment(aDateTime)
+      if(!m) { return '' }
+      return m.format('D MMMM YYYY, h:mm a');
+    },
+
+    _formatDateTimeShort: function(aDateTime) {
+      var m = this._parseMoment(aDateTime)
+      if(!m) { return '' }
+      return m.format('D MMM, h:mm a');
+    },
+
+    _formatDate: function(aDateTime) {
+      var m = this._parseMoment(aDateTime)
+      if(!m) { return '' }
+      return m.format('D MMMM YYYY');
+    },
+
+    _formatTime: function(aDateTimeOrTime) {
+      var m = this._parseMoment(aDateTimeOrTime)
+      if(!m) {
+        m = this._parseMoment('1985-03-03T' + aDateTimeOrTime)
+      }
+      if(!m) { return '' }
+      return m.format('h:mma');
+    },
+
+    _time12: function(aDateTimeOrTime) {
+      var m = this._parseMoment(aDateTimeOrTime)
+      if(!m) {
+        m = this._parseMoment('1985-03-03T' + aDateTimeOrTime)
+      }
+      if(!m) { return '' }
+
+      return m.format('h:mma');
+    },
+
+    _time24: function(aDateTimeOrTime, format='YYYY-MM-MMTh:mma') {
+      var m = this._parseMoment(aDateTimeOrTime)
+      if(!m) {
+        m = this._parseMoment('1985-03-03T' + aDateTimeOrTime, format)
+      }
+      if(!m) { return '' }
+
+      return m.format('HH:mm:ss');
+    },
+
+    _timeAmPm: function(aDateTimeOrTime) {
+      var m = this._parseMoment(aDateTimeOrTime)
+      if(!m) {
+        m = this._parseMoment('1985-03-03T' + aDateTimeOrTime)
+      }
+      if(!m) { return '' }
+      return m.format('a');
+    },
+
+    _timeDiff: function(aDateTime1, aDateTime2) {
+      let a = this._parseMoment(aDateTime1)
+      let b = this._parseMoment(aDateTime2)
+
+      if (a && b && a.isValid() && b.isValid()) {
+        let ms = Math.abs(a.diff(b))
+        var d = moment.duration(ms);
+        return Math.floor(d.asHours()) + 'h ' + moment.utc(ms).format("mm") + 'm';
+      } else {
+        return ''
+      }
+
+    },
+
+    _yearsSince: function(aDate) {
+      return moment().diff(aDate, 'years')
+    },
+
+    _timeIntervallList: function(from='12:00am', to='', intervall=['00', '30']) {
+      let times = [];
+      let ampm = ['am', 'pm'];
+      for (var i = 0; i < ampm.length; i++) {
+        var p = ampm[i];
+        for (var j = 0; j < 12; j++) {
+          for (var k = 0; k < intervall.length; k++) {
+            var strTime = (j===0 ? '12' : j) + ':' + intervall[k] + p;
+            times.push(strTime);
+          }
+        }
+      }
+
+      let startIndex = times.indexOf(from) > -1 ? times.indexOf(from) : 0;
+      let endIndex = times.indexOf(to) > -1 ? times.indexOf(to)+1 : times.length;
+
+      return times.slice(startIndex, endIndex);
+    },
+
+    _fullDayNameFromShortDayName(dayShort) {
+      if (!dayShort) return ''
+      return moment.weekdays().find(e => e.substring(0, 3).toLowerCase() === dayShort.substring(0, 3).toLowerCase())
+    },
+    // Date & Time END
+  };
+
+  Elfy.EEHelperBehavior = [
+    Elfy.EEHelperBehaviorImpl,
+  ];
+</script>
