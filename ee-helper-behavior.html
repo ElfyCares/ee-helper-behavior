@@ -303,7 +303,7 @@
       if (short) {
         return this._concat(', ',address.address1, address.address2)
       } else {
-        if (address.address2 ) {
+        if (address.address2) {
           return this._concat(', ',address.address1, address.address2, address.postalCode, address.city)
         } else {
           return this._concat(', ',address.address1, address.postalCode, address.city)
