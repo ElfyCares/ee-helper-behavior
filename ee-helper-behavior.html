@@ -331,13 +331,13 @@
     _formatDateTime: function(aDateTime) {
       var m = this._parseMoment(aDateTime)
       if(!m) { return '' }
-      return m.format('D MMMM YYYY, h:mm a');
+      return m.format('D MMMM YYYY, LT');
     },
 
     _formatDateTimeShort: function(aDateTime) {
       var m = this._parseMoment(aDateTime)
       if(!m) { return '' }
-      return m.format('D MMM, h:mm a');
+      return m.format('D MMM, LT');
     },
 
     _formatDate: function(aDateTime) {
@@ -352,7 +352,7 @@
         m = this._parseMoment('1985-03-03T' + aDateTimeOrTime)
       }
       if(!m) { return '' }
-      return m.format('h:mma');
+      return m.format('LT');
     },
 
     _time12: function(aDateTimeOrTime) {
