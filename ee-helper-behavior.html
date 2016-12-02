@@ -314,7 +314,8 @@
 
     // Date & Time
     _parseMoment: function(aDateTime, format) {
-
+      if (!aDateTime) return false
+      if (aDateTime._isAMomentObject) return aDateTime
       var m = format ? moment.utc(aDateTime, format) : moment.utc(aDateTime)
       if (!m.isValid() || typeof aDateTime === 'undefined') {
         return false
