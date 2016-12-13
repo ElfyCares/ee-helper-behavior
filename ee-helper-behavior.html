@@ -324,9 +324,9 @@
       return m
     },
 
-    _humanizeBetweenDateAndNow(aDatetime) {
+    _humanizeBetweenDateAndNow(aDatetime, format) {
       if (!aDatetime) return ''
-      var m = this._parseMoment(aDatetime)
+      var m = format ? this._parseMoment(aDatetime, format) : this._parseMoment(aDatetime)
       var diff = m.diff(moment.utc())
       var dur = moment.duration(diff)
       return dur.humanize() + ' ago'
