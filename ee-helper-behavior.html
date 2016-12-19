@@ -327,6 +327,10 @@
     _humanizeBetweenDateAndNow(aDatetime, format) {
       if (!aDatetime) return ''
       var m = format ? this._parseMoment(aDatetime, format) : this._parseMoment(aDatetime)
+      if (!m || !m.isValid()) {
+        console.warn('Not valid moment: ', aDatetime, m)
+        return ''
+      }
       var diff = m.diff(moment.utc())
       var dur = moment.duration(diff)
       return dur.humanize() + ' ago'
