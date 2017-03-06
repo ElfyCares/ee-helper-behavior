@@ -324,6 +324,12 @@
       return m
     },
 
+    _weekdayOfDate(aDate, format) {
+      var m = this._parseMoment(aDate, format)
+      if(!m) { return '' }
+      return m.format('dddd');
+    },
+
     _humanizeBetweenDateAndNow(aDatetime, format) {
       if (!aDatetime) return ''
       var m = format ? this._parseMoment(aDatetime, format) : this._parseMoment(aDatetime)
